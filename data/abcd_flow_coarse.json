@@ -1,0 +1,12 @@
+{
+  "product_defect": "product",
+  "single_item_query": "product",
+  "order_issue": "order_logistics",
+  "shipping_issue": "order_logistics",
+  "purchase_dispute": "order_logistics",
+  "account_access": "account",
+  "manage_account": "account",
+  "subscription_inquiry": "account",
+  "troubleshoot_site": "site",
+  "storewide_query": "site"
+}

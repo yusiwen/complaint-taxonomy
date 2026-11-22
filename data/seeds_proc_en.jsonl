@@ -1,0 +1,37 @@
+{"text": "The parcel has not moved in a week", "label": "complaint"}
+{"text": "It arrived broken, I want a replacement", "label": "complaint"}
+{"text": "My money is still not back, when will you handle it", "label": "complaint"}
+{"text": "The agent ignores me, I asked several times", "label": "complaint"}
+{"text": "It looks nothing like the photo, very disappointed", "label": "complaint"}
+{"text": "You charged me the wrong amount and took extra", "label": "complaint"}
+{"text": "You shipped the wrong item, this is not what I ordered", "label": "complaint"}
+{"text": "It failed after two days, the quality is no good", "label": "complaint"}
+{"text": "One piece was missing, there were only two in the box", "label": "complaint"}
+{"text": "You said two days and it dragged on for half a month", "label": "complaint"}
+{"text": "I opened a service request and nobody contacted me", "label": "complaint"}
+{"text": "This is unusable, total rip off", "label": "complaint"}
+{"text": "Hi, are there any promotions at the moment", "label": "other"}
+{"text": "I would like to know your opening hours", "label": "other"}
+{"text": "Alright, understood, thanks", "label": "other"}
+{"text": "Can you issue an electronic invoice", "label": "other"}
+{"text": "How long does a refund normally take", "label": "other"}
+{"text": "I need advice on which size to pick", "label": "other"}
+{"text": "Please check my order status, thanks", "label": "other"}
+{"text": "It arrived and the packaging was intact", "label": "other"}
+{"text": "Do you have this in other colours", "label": "other"}
+{"text": "Do you accept PayPal", "label": "other"}
+{"text": "I followed the instructions and it works now", "label": "other"}
+{"text": "Thanks, it is resolved", "label": "other"}
+{"text": "ok, thanks", "label": "procedure"}
+{"text": "yes, that's all", "label": "procedure"}
+{"text": "no, nothing else", "label": "procedure"}
+{"text": "sounds good, bye", "label": "procedure"}
+{"text": "thanks a lot for your help", "label": "procedure"}
+{"text": "my name is Albert Sanders", "label": "procedure"}
+{"text": "my account id is <N>", "label": "procedure"}
+{"text": "i can give you the order id <N> and my email <EMAIL>", "label": "procedure"}
+{"text": "sure, i will check my account and get back to you", "label": "procedure"}
+{"text": "i cannot log into my account, the password keeps failing", "label": "complaint"}
+{"text": "my account is locked and i cannot get in", "label": "complaint"}
+{"text": "i was charged the subscription fee twice, i want a refund", "label": "complaint"}
+{"text": "the address is correct but delivery keeps failing", "label": "complaint"}
