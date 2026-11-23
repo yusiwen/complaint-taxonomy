@@ -143,7 +143,13 @@ def main():
                "precedence_worksheet": [
                    {"similarity": round(o, 3), "a": a["label"], "b": b["label"],
                     "decision": None} for o, a, b in pairs]}
-    with open(os.path.splitext(out)[0] + ".json", "w", encoding="utf-8") as f:
+    # The sidecar must never overwrite the taxonomy it was built from. Calling
+    # `--out out/codebook_merged.md` on `out/codebook_merged.json` would otherwise
+    # replace the input with the codebook and the next tool would find no classes.
+    sidecar = os.path.splitext(out)[0] + ".json"
+    if os.path.abspath(sidecar) == os.path.abspath(args.taxonomy):
+        sidecar = os.path.splitext(out)[0] + ".codebook.json"
+    with open(sidecar, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
     missing = sum(1 for e in entries

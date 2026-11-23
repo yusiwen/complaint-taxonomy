@@ -765,24 +765,38 @@ on the same corpus, which is the whole argument for the extra step.
 
 The abstentions are the interesting part, and they break down by ground-truth flow:
 
-| true flow | abstain rate | reading |
-|---|---|---|
-| single_item_query | 97% | a product question, not a complaint — correct refusal |
-| storewide_query | 81% | same |
-| shipping_issue | 68% | **a real complaint with no home in the codebook** |
-| order_issue | 66% | **same** |
-| subscription_inquiry | 44% | mixed |
-| purchase_dispute | 15% | covered |
-| account_access | 14% | covered |
-| product_defect | 7% | covered |
-| troubleshoot_site | 4% | covered |
+| true flow | abstain, first codebook | abstain, merged codebook | change |
+|---|---|---|---|
+| single_item_query | 98% | 30% | −68pt |
+| storewide_query | 79% | 53% | −26pt |
+| shipping_issue | 66% | 31% | **−36pt** |
+| order_issue | 64% | 32% | **−32pt** |
+| subscription_inquiry | 49% | 13% | **−36pt** |
+| manage_account | 58% | 37% | −21pt |
+| purchase_dispute | 13% | 0% | −13pt |
+| account_access | 11% | 11% | — |
+| product_defect | 9% | 7% | −2pt |
+| troubleshoot_site | 4% | 0% | −4pt |
+| **total** | **46%** | **21%** | **−25pt** |
 
-So the abstain rate is two different signals at once. The top two rows are the taxonomy
-doing its job. Rows three and four are a **coverage gap**: at k=10 the clustering never
-produced distinct delivery and order-status categories, so the definitions have nothing
-to offer and the model correctly declines. A 46% abstain rate is not a failure of R4; it
-is R4 telling you the codebook is incomplete, which is exactly the information needed
-before annotating at scale.
+The first column is not a failure of R4, it is R4 doing its job: it refuses to label what
+the codebook cannot describe. But the reason behind rows three and four was worth chasing,
+because those are real complaints. The cause turned out to be the *filter*, not `k`: the
+seed kNN keeps complaint utterances and drops the rest, and "please check my order status"
+/ "I need to change my delivery address" / "can I extend my subscription" are **requests,
+not complaints** — so they were deleted before any cluster could ever represent them. No
+value of `k` recovers a category whose sentences were thrown away upstream.
+
+The fix is the merge recorded in `tools/merge_taxonomies.py`: cluster once on the filtered
+corpus (complaint topics), once unfiltered at `k=20` (which surfaces 物流时效与进度查询,
+订单状态查询, 订阅与配送延期, 价格优惠与费用咨询), drop the procedural classes nobody
+wants in a taxonomy, de-duplicate by definition similarity, and label against the union.
+16 classes instead of 10, and the abstain rate falls by 25 points with the biggest drops
+exactly on the gaps.
+
+What is left in the 21% is the honest residue: `storewide_query` at 53% (store-wide
+questions the taxonomy still does not cover) and the account/shipping rows around a third.
+Those are the next candidates, and the method is now the same one that closed this gap.
 
 **R4a — `tools/make_codebook.py` and `tools/kappa.py`.** The codebook generator emits
 the five fields the naming pass produced plus an explicit **precedence slot** per class,
@@ -1133,6 +1147,7 @@ tools/
   calibrate_thresh.py         sweep --knn-thresh per corpus against its orphan cost
   make_labels.py              R4: label conversations against taxonomy definitions
   make_codebook.py            R4a: taxonomy.json -> codebook.md + precedence worksheet
+  merge_taxonomies.py         union several taxonomies into one codebook (coverage)
   kappa.py                    R4a: Cohen's kappa, overall / per class / disagreements
   train_classifier.py         R5: softmax regression on embeddings + baselines + report
   route_unknown.py            R6: confidence/distance routing of novelty to humans
