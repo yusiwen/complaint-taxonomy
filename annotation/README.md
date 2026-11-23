@@ -12,6 +12,8 @@
 | `pilot_A.jsonl` / `pilot_B.jsonl` | 上面 30 条的空答卷 |
 | `items.jsonl` | 150 条，**决定 kappa 的那一批** |
 | `ann_A.jsonl` / `ann_B.jsonl` | 上面 150 条的空答卷 |
+| `annotate_pilot.html` | **推荐**：校准集的网页标注页（下拉选择，自动保存，一键导出 JSONL） |
+| `annotate_main.html` | 正式集的网页标注页 |
 
 `items.jsonl` 里只有用户说的话，没有真值、没有模型标注、没有聚类编号——这是故意的。
 客服的话也没给：定义是按"用户抱怨/要求什么"写的，看到客服话术会让人去抄流程而不是套定义。

@@ -74,6 +74,12 @@ def main():
     ap.add_argument("--pilot", type=int, default=30, help="items for the calibration pass")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--label-field", default="label")
+    ap.add_argument("--taxonomy", default="",
+                    help="taxonomy json, required for --html (the dropdown options and "
+                         "the codebook panel are built from it)")
+    ap.add_argument("--html", action="store_true",
+                    help="also write annotate_pilot.html / annotate_main.html: dropdowns, "
+                         "autosave, JSONL export")
     args = ap.parse_args()
 
     convs = [c for c in read_jsonl(args.input) if user_text(c)]
@@ -98,6 +104,23 @@ def main():
         stem = f"{name}_" if name else "ann_"
         blank([o["id"] for o in items], os.path.join(args.out, f"{stem}A.jsonl"))
         blank([o["id"] for o in items], os.path.join(args.out, f"{stem}B.jsonl"))
+
+    if args.html:
+        if not args.taxonomy:
+            sys.exit("[fatal] --html needs --taxonomy to get the labels from")
+        import annotation_page as ap_page
+        with open(args.taxonomy, encoding="utf-8") as f:
+            tax = json.load(f)
+        labels = [e["label"] for e in tax["clusters"] if e.get("label")]
+        cards = ap_page.codebook_cards(tax)
+        for set_name, items, fname in (
+                ("校准 30 条", pilot, "annotate_pilot.html"),
+                (f"正式 {len(main_items)} 条", main_items, "annotate_main.html")):
+            items_payload = [{"id": o["id"], "text": user_text(o)} for o in items]
+            size = ap_page.render(set_name, items_payload, labels, cards,
+                                  os.path.join(args.out, fname))
+            print(f"  wrote {fname} ({size / 1024:.0f} KB, {len(items)} items, "
+                  f"{len(labels)} labels + UNKNOWN)")
 
     support = {}
     if args.labels:
@@ -131,6 +154,8 @@ def main():
 | `pilot_A.jsonl` / `pilot_B.jsonl` | 上面 30 条的空答卷 |
 | `items.jsonl` | {len(main_items)} 条，**决定 kappa 的那一批** |
 | `ann_A.jsonl` / `ann_B.jsonl` | 上面 {len(main_items)} 条的空答卷 |
+| `annotate_pilot.html` | **推荐**：校准集的网页标注页（下拉选择，自动保存，一键导出 JSONL） |
+| `annotate_main.html` | 正式集的网页标注页 |
 
 `items.jsonl` 里只有用户说的话，没有真值、没有模型标注、没有聚类编号——这是故意的。
 客服的话也没给：定义是按"用户抱怨/要求什么"写的，看到客服话术会让人去抄流程而不是套定义。

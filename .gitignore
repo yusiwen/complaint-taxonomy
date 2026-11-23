@@ -17,3 +17,6 @@ venv/
 .vscode/
 .idea/
 .DS_Store
+
+# annotation packet (generated; carries corpus text)
+annotation/
