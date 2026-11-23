@@ -3,7 +3,14 @@ name = "complaint-taxonomy"
 version = "0.2.0"
 description = "Cluster bilingual (Chinese/English) complaint conversation logs into complaint categories"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Linguistic",
+    "Intended Audience :: Developers",
+]
 dependencies = [
     "numpy>=1.24",
 ]

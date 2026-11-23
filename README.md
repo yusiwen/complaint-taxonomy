@@ -29,6 +29,7 @@ the module map and the roadmap to a production classifier live in
 - [Output files](#output-files)
 - [Limitations](#limitations)
 - [Repository layout](#repository-layout)
+- [License](#license)
 - [Design and roadmap](docs/DESIGN.md) — route, decisions, component map, phases
 
 ## What it does
@@ -1144,3 +1145,10 @@ tools/
 out/                          run outputs (git-ignored)
 .venv/                        uv-managed environment (git-ignored)
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE). The corpora this was measured on are public and carry
+their own licences: ABCD is MIT, the CFPB consumer complaint database is public
+domain, and Chinese-Ambiguous-Reference is MIT. None of them are redistributed here;
+`tools/get_demo_corpus.py` and `tools/import_*.py` fetch and convert them locally.
