@@ -17,9 +17,10 @@ codebook is how kappa gets inflated: both people must be reading the same text.
 
     uv run python tools/make_annotation_packet.py \
         --input data/public/abcd_500_zh.jsonl \
-        --codebook out/codebook_merged.md \
+        --codebook data/codebook_zh_en.md \
+        --taxonomy data/codebook_zh_en.json \
         --labels data/public/abcd_500_labels.jsonl \
-        --out annotation --n 150 --pilot 30
+        --out annotation --n 150 --pilot 30 --html
 
 Outputs (under --out)
     README.md            protocol, time budget, how it is scored
@@ -111,7 +112,10 @@ def main():
         import annotation_page as ap_page
         with open(args.taxonomy, encoding="utf-8") as f:
             tax = json.load(f)
-        labels = [e["label"] for e in tax["clusters"] if e.get("label")]
+        classes = tax.get("clusters") or tax.get("classes") or []
+        labels = [e["label"] for e in classes if e.get("label")]
+        if not labels:
+            sys.exit(f"[fatal] no labelled classes in {args.taxonomy!r}")
         cards = ap_page.codebook_cards(tax)
         for set_zh, set_en, items, fname, prefix in (
                 ("校准 30 条", "calibration (30)", pilot, "annotate_pilot.html", "pilot"),
@@ -223,6 +227,29 @@ uv run python tools/kappa.py --a annotation/ann_A.jsonl --b annotation/ann_B.jso
 
 输出：总体 kappa、原始一致率、每类 kappa、以及最大的分歧格（A 判什么 → B 判什么），
 分歧格子就是下一次改 codebook 的清单。
+
+## 生成物 vs 人工成果（落盘约定）
+
+**`annotation/` —— 生成物，不进 git**（`.gitignore` 已忽略）：`items.jsonl`、空答卷
+`pilot_A/B.jsonl` / `ann_A/B.jsonl`、两个 HTML、codebook 副本、本 README。全部由一条命令
+重建，而且逐字带着语料原文。
+
+**`annotations/` —— 人工成果，要进 git**：填好的 `pilot_A/B.jsonl`、`ann_A/B.jsonl`、
+`kappa_*.txt`。不可重建，是 kappa 结论与 codebook 改动的原始证据。
+
+导出后的落法：
+
+```bash
+mkdir -p annotations
+cp ~/Downloads/ann_A.jsonl annotations/          # 你那份
+cp ~/Downloads/ann_B.jsonl annotations/          # 另一人那份
+uv run python tools/kappa.py --a annotations/ann_A.jsonl \
+    --b annotations/ann_B.jsonl | tee annotations/kappa_A_vs_B.txt
+git add annotations/ && git commit -m "Add double annotation (150 items)"
+```
+
+校准集（`pilot_*`）同样要留：它的数据不进正式 kappa，但"某两条优先级规则为什么这么写"
+只有它答得出来。
 
 ## 两条纪律
 

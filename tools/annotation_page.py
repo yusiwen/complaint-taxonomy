@@ -547,7 +547,9 @@ def render(set_name_zh, items, codebook, out_path, prefix="ann", set_name_en="")
 def codebook_cards(taxonomy):
     """The five fields an annotator reads, in both languages when available."""
     cards = []
-    for e in taxonomy.get("clusters") or []:
+    # a committed codebook stores its entries under `classes`; a run taxonomy under
+    # `clusters` — both are the same thing to the page
+    for e in (taxonomy.get("clusters") or taxonomy.get("classes") or []):
         if not e.get("label"):
             continue
         card = {"label": e["label"],

@@ -798,6 +798,12 @@ What is left in the 21% is the honest residue: `storewide_query` at 53% (store-w
 questions the taxonomy still does not cover) and the account/shipping rows around a third.
 Those are the next candidates, and the method is now the same one that closed this gap.
 
+The codebook itself is committed, not generated on demand: `data/codebook_zh_en.md`
+(16 classes, bilingual, ~16 KB) and its machine twin `data/codebook_zh_en.json`, so
+anyone can read the taxonomy on GitHub without running the pipeline. It carries a
+`review_status` field that says exactly what has and has not been checked — the
+precedence rules are still blank.
+
 **R4a — `tools/make_codebook.py` and `tools/kappa.py`.** The codebook generator emits
 the five fields the naming pass produced plus an explicit **precedence slot** per class,
 and a worksheet of the 6 class pairs whose definitions sit closest in embedding space
@@ -1132,6 +1138,8 @@ data/
   seeds_zh.jsonl seeds_en.jsonl            complaint vs non-complaint seeds for --seeds
   seeds_proc_zh.jsonl seeds_proc_en.jsonl  procedure seeds (R3b, the better filter)
   abcd_flow_coarse.json       10 ABCD flows -> 4 coarse groups (lever experiments)
+  codebook_zh_en.json         16-class codebook, Chinese + English, hand-corrected
+  codebook_zh_en.md           the same rendered for reading (no tools needed)
   public/                                  imported datasets (git-ignored)
 tools/
   get_demo_corpus.py          fetch ABCD and build the demo corpus (nothing committed)

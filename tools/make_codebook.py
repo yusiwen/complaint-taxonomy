@@ -57,11 +57,15 @@ def main():
     ap.add_argument("--taxonomy", required=True)
     ap.add_argument("--out", default="", help="default <taxonomy dir>/codebook.md")
     ap.add_argument("--examples", type=int, default=3)
+    ap.add_argument("--no-sidecar", action="store_true",
+                    help="do not write the machine-readable twin; use when the input "
+                         "taxonomy already is that file")
     args = ap.parse_args()
 
     with open(args.taxonomy, encoding="utf-8") as f:
         tax = json.load(f)
-    entries = [e for e in tax.get("clusters", []) if e.get("label")]
+    entries = [e for e in (tax.get("clusters") or tax.get("classes") or [])
+               if e.get("label")]
     if not entries:
         sys.exit("[fatal] taxonomy has no labelled entries")
     out = args.out or os.path.join(os.path.dirname(os.path.abspath(args.taxonomy)),
@@ -76,15 +80,25 @@ def main():
                 algo = json.load(f).get("kmeans_algo")
 
     total = sum(int(e.get("size") or 0) for e in entries) or 1
+    prov = tax.get("provenance") or {}
     lines = [
-        "# 投诉类别 codebook",
+        f"# {tax.get('name_zh') or '投诉类别 codebook'}",
         "",
         f"来源：`{os.path.basename(args.taxonomy)}`，{len(entries)} 个类别，"
         f"覆盖 {total} 段对话。",
-        f"生成模型：{tax.get('llm_model', 'n/a')}；聚类算法：{algo or 'n/a'}。",
+        (f"生成模型：{tax['llm_model']}；聚类算法：{algo}。"
+         if tax.get("llm_model") else
+         f"评审状态：{prov.get('review_status', 'n/a')}。"),
         "",
+    ]
+    if prov.get("note"):
+        lines += [f"> {prov['note']}", ""]
+    lines += [
         "> 这是一份草稿。`定义 / 包含 / 边界 / 例子` 由模型起草，`优先级` 必须人工填写——",
         "> 两个类别都能套上同一段对话时，谁赢必须写死在 codebook 里，否则标注一定分歧。",
+        ">",
+        "> 英文类别名是界面显示别名（`label_en`），**定义以中文为准**；标注与 kappa 比对的",
+        "> 也始终是中文 `label`。",
         "",
         "## 类别速查",
         "",
@@ -98,7 +112,8 @@ def main():
     lines += ["", "---", ""]
     for e in sorted(entries, key=lambda x: int(x["cluster"])):
         ev = e.get("evidence") or {}
-        lines.append(f"## {e['label']}")
+        head = e["label"] + (f"  ·  {e['label_en']}" if e.get("label_en") else "")
+        lines.append(f"## {head}")
         lines.append("")
         lines.append(f"- 簇：`{e['cluster']}`｜样本量：{e.get('size', 0)} 段"
                      + (f"｜主导真值：`{ev.get('dominant_label')}` "
@@ -146,11 +161,12 @@ def main():
     # The sidecar must never overwrite the taxonomy it was built from. Calling
     # `--out out/codebook_merged.md` on `out/codebook_merged.json` would otherwise
     # replace the input with the codebook and the next tool would find no classes.
-    sidecar = os.path.splitext(out)[0] + ".json"
-    if os.path.abspath(sidecar) == os.path.abspath(args.taxonomy):
-        sidecar = os.path.splitext(out)[0] + ".codebook.json"
-    with open(sidecar, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+    if not args.no_sidecar:
+        sidecar = os.path.splitext(out)[0] + ".json"
+        if os.path.abspath(sidecar) == os.path.abspath(args.taxonomy):
+            sidecar = os.path.splitext(out)[0] + ".codebook.json"
+        with open(sidecar, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
 
     missing = sum(1 for e in entries
                   if not (e.get("definition") and e.get("boundary")
