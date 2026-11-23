@@ -113,14 +113,17 @@ def main():
             tax = json.load(f)
         labels = [e["label"] for e in tax["clusters"] if e.get("label")]
         cards = ap_page.codebook_cards(tax)
-        for set_name, items, fname, prefix in (
-                ("校准 30 条", pilot, "annotate_pilot.html", "pilot"),
-                (f"正式 {len(main_items)} 条", main_items, "annotate_main.html", "ann")):
+        for set_zh, set_en, items, fname, prefix in (
+                ("校准 30 条", "calibration (30)", pilot, "annotate_pilot.html", "pilot"),
+                (f"正式 {len(main_items)} 条", f"scored set ({len(main_items)})",
+                 main_items, "annotate_main.html", "ann")):
             items_payload = [{"id": o["id"], "text": user_text(o)} for o in items]
-            size = ap_page.render(set_name, items_payload, labels, cards,
-                                  os.path.join(args.out, fname), prefix=prefix)
+            size = ap_page.render(set_zh, items_payload, cards,
+                                  os.path.join(args.out, fname),
+                                  prefix=prefix, set_name_en=set_en)
             print(f"  wrote {fname} ({size / 1024:.0f} KB, {len(items)} items, "
-                  f"{len(labels)} labels + UNKNOWN)")
+                  f"{len(labels)} labels + UNKNOWN, "
+                  f"{'zh/en' if cards and cards[0].get('label_en') else 'zh only'})")
 
     support = {}
     if args.labels:
@@ -154,7 +157,7 @@ def main():
 | `pilot_A.jsonl` / `pilot_B.jsonl` | 上面 30 条的空答卷 |
 | `items.jsonl` | {len(main_items)} 条，**决定 kappa 的那一批** |
 | `ann_A.jsonl` / `ann_B.jsonl` | 上面 {len(main_items)} 条的空答卷 |
-| `annotate_pilot.html` | **推荐**：校准集的网页标注页（下拉选择，自动保存，一键导出 JSONL） |
+| `annotate_pilot.html` | **推荐**：校准集标注页（下拉选择、自动保存、中英切换） |
 | `annotate_main.html` | 正式集的网页标注页 |
 
 `items.jsonl` 里只有用户说的话，没有真值、没有模型标注、没有聚类编号——这是故意的。
@@ -194,6 +197,13 @@ def main():
 为什么卡这么死：未标的条目两边都是 `null`，`kappa.py` 会把它算成“一致”——两个人各跳
 一半，就能刷出一个 100% 的假信度。即便手填的 JSONL 里有空值，`kappa.py` 也会把它们
 排除并打印 `skipped` 条数，而不是计入一致。
+
+## 界面语言
+
+右上角 `中文 / EN` 切换的是**界面和 codebook 的显示语言**（英文定义由
+`tools/translate_codebook.py` 生成，与中文原文存放在同一个 taxonomy 里）。**导出的文件
+永远是中文类别名**——因为 codebook、标注工具和 kappa 比的都是它，英文只是阅读别名。
+两个人可以各用各的语言，导出的文件仍然可比。
 
 ## 判定标准
 
