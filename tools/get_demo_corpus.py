@@ -18,7 +18,7 @@ Outputs (all git-ignored)
     data/public/abcd_500_zh.jsonl                       (--translate)
     data/public/abcd_500_parallel*.jsonl                (--translate)
 
-The download is cached under ~/.cache/complaint-cluster/ so repeated runs are offline.
+The download is cached under ~/.cache/complaint-taxonomy/ so repeated runs are offline.
 ABCD is MIT licensed; the Chinese half is machine translation produced locally.
 """
 import argparse
@@ -31,7 +31,7 @@ ABCD_URL = ("https://raw.githubusercontent.com/asappresearch/abcd/master/"
             "data/abcd_v1.1.json.gz")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE = os.path.expanduser("~/.cache/complaint-cluster/abcd_v1.1.json.gz")
+CACHE = os.path.expanduser("~/.cache/complaint-taxonomy/abcd_v1.1.json.gz")
 
 
 def ensure_download(path=None):
@@ -71,7 +71,8 @@ def main():
     ap.add_argument("--translate", action="store_true",
                     help="also produce the Chinese half (needs --endpoint)")
     ap.add_argument("--endpoint", default="http://127.0.0.1:8000/v1/chat/completions")
-    ap.add_argument("--model", default="qwen38-27b-sglang")
+    ap.add_argument("--model", default="",
+                    help="model name your endpoint expects; empty is fine")
     ap.add_argument("--workers", type=int, default=8)
     args = ap.parse_args()
 

@@ -897,7 +897,10 @@ def main():
                          "write taxonomy.json (R3); needs --llm-endpoint")
     ap.add_argument("--llm-endpoint", default="",
                     help="OpenAI-compatible /v1/chat/completions for cluster naming")
-    ap.add_argument("--llm-model", default="qwen38-27b-sglang")
+    ap.add_argument("--llm-model", default="",
+                    help="whatever your chat endpoint calls the model; empty "
+                         "sends an empty name, which most OpenAI-compatible "
+                         "servers accept")
     ap.add_argument("--save-model", default="",
                     help="write the fitted centroids + metadata (npz) so new "
                          "conversations can be assigned later with --apply-model")
@@ -1140,7 +1143,8 @@ def main():
         if not args.llm_endpoint:
             sys.exit("[fatal] --name-clusters needs --llm-endpoint")
         import llm_naming
-        print(f"[3.2] naming {k} clusters with {args.llm_model}")
+        print(f"[3.2] naming {k} clusters with "
+              f"{args.llm_model or '(server default)'}")
         entries = llm_naming.name_all(clusters, args.llm_endpoint, args.llm_model,
                                       log=print)
         taxonomy = {"k": k,

@@ -1,4 +1,4 @@
-# complaint-cluster
+# complaint-taxonomy
 
 Cluster complaint conversation logs (customer support chats) into complaint
 categories, in **Chinese and English**.
@@ -56,7 +56,7 @@ uv sync --extra embed          # creates .venv from pyproject.toml + uv.lock
 
 **On real dialogue data.** No corpus is committed — every one of them is a download plus
 a conversion. One command fetches the demo set (40 MB, cached under
-`~/.cache/complaint-cluster/`, no model needed):
+`~/.cache/complaint-taxonomy/`, no model needed):
 
 ```bash
 uv run python tools/get_demo_corpus.py        # 500 ABCD dialogues -> data/public/
@@ -115,7 +115,7 @@ Both shapes are accepted; the loader also understands `conversation`, `turns`,
 ```bash
 uv sync                               # pipeline only (numpy)
 uv sync --extra embed                 # + fastembed, the normal setup
-uv sync --extra embed --extra torch   # + CUDA build, verified on this GB10
+uv sync --extra embed --extra torch   # + CUDA build, verified on aarch64 + CUDA 13
 uv run python tools/gpu_check.py      # proves the GPU actually computes
 uv run ruff check .                   # lint (ruff is in the dev group)
 ```
@@ -136,7 +136,7 @@ Verified with `tools/gpu_check.py`:
 
 ```
 torch   2.12.1+cu130   cuda build 13.0   cudnn 92000
-device  NVIDIA GB10  cc=12.1  mem=130.6 GB  sm=48
+device  <gpu name>  cc=12.1  mem=130.6 GB  sm=48
 anchor  ones@ones = 4096 (exact)
 matmul  4096x4096 bf16   1.5 ms/iter   89 TFLOP/s
 anchor  bf16 gemm vs fp32 gemm, same inputs: rel err 2.1e-03

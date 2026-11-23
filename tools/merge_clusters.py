@@ -155,7 +155,9 @@ def main():
     ap.add_argument("--samples", type=int, default=12)
     ap.add_argument("--llm-endpoint", default="",
                     help="e.g. http://127.0.0.1:8000/v1/chat/completions (optional)")
-    ap.add_argument("--llm-model", default="qwen38-27b-sglang")
+    ap.add_argument("--llm-model", default="",
+                    help="model name your endpoint expects; "
+                         "empty is fine for most servers")
     args = ap.parse_args()
 
     convs = read_jsonl(args.input)

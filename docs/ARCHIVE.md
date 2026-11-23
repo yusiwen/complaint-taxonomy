@@ -22,7 +22,7 @@ Removed in this cleanup:
 Python conversion, so it belongs in `.gitignore` like any other build product: a committed
 copy drifts from the script that generates it, and it keeps weight in the history forever.
 `tools/get_demo_corpus.py` rebuilds the demo set in one command (and caches the 37 MB ABCD
-archive under `~/.cache/complaint-cluster/`).
+archive under `~/.cache/complaint-taxonomy/`).
 
 What *is* committed: the hand-written seed sentences (`data/seeds*.jsonl`,
 `data/seeds_proc*.jsonl`) and `data/abcd_flow_coarse.json`. Those are source data — they

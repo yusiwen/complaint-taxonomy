@@ -20,7 +20,7 @@ Usage
 
     uv run python tools/translate_abcd.py --n 500 --split test \
         --endpoint http://127.0.0.1:8000/v1/chat/completions \
-        --model qwen38-27b-sglang \
+        --model <name-if-your-server-needs-one> \
         --out data/public/abcd_500
 
 Outputs
@@ -109,7 +109,8 @@ def main():
     ap.add_argument("--n", type=int, default=500)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--endpoint", default="http://127.0.0.1:8000/v1/chat/completions")
-    ap.add_argument("--model", default="qwen38-27b-sglang")
+    ap.add_argument("--model", default="",
+                    help="model name your endpoint expects; empty is fine")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--out", default="data/public/abcd_500")
     ap.add_argument("--limit", type=int, default=0,

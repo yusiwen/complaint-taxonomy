@@ -226,7 +226,7 @@ wheels = [
 ]
 
 [[package]]
-name = "complaint-cluster"
+name = "complaint-taxonomy"
 version = "0.2.0"
 source = { virtual = "." }
 dependencies = [

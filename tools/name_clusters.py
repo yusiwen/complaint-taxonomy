@@ -105,7 +105,9 @@ def main():
     ap.add_argument("--clusters", default="", help="clusters.json path (overrides --run)")
     ap.add_argument("--llm-endpoint", default="",
                     help="e.g. http://127.0.0.1:8000/v1/chat/completions")
-    ap.add_argument("--llm-model", default="qwen38-27b-sglang")
+    ap.add_argument("--llm-model", default="",
+                    help="model name your endpoint expects; "
+                         "empty is fine for most servers")
     ap.add_argument("--labels", default="", help="ground truth: adds evidence + context")
     ap.add_argument("--label-field", default="label")
     ap.add_argument("--label-map", default="", help="json {fine: coarse}")

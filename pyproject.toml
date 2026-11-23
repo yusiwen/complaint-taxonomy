@@ -1,5 +1,5 @@
 [project]
-name = "complaint-cluster"
+name = "complaint-taxonomy"
 version = "0.2.0"
 description = "Cluster bilingual (Chinese/English) complaint conversation logs into complaint categories"
 readme = "README.md"
@@ -15,7 +15,7 @@ embed = [
 ]
 # Only needed if you want to swap the ONNX embedder for sentence-transformers
 # or do GPU work.  -> uv sync --extra torch
-# Pinned to the version verified to run on this GB10 box (CUDA 13.0 wheels,
+# Pinned to the version verified to run on an aarch64 box (CUDA 13.0 wheels,
 # manylinux_2_28_aarch64, straight from PyPI -- no extra index needed).
 torch = [
     "torch==2.12.1",

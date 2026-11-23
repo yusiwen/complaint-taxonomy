@@ -159,7 +159,9 @@ def main():
     ap.add_argument("--input", required=True)
     ap.add_argument("--taxonomy", required=True)
     ap.add_argument("--llm-endpoint", required=True)
-    ap.add_argument("--llm-model", default="qwen38-27b-sglang")
+    ap.add_argument("--llm-model", default="",
+                    help="model name your endpoint expects; "
+                         "empty is fine for most servers")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--truth-labels", default="",
