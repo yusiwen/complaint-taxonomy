@@ -113,12 +113,12 @@ def main():
             tax = json.load(f)
         labels = [e["label"] for e in tax["clusters"] if e.get("label")]
         cards = ap_page.codebook_cards(tax)
-        for set_name, items, fname in (
-                ("校准 30 条", pilot, "annotate_pilot.html"),
-                (f"正式 {len(main_items)} 条", main_items, "annotate_main.html")):
+        for set_name, items, fname, prefix in (
+                ("校准 30 条", pilot, "annotate_pilot.html", "pilot"),
+                (f"正式 {len(main_items)} 条", main_items, "annotate_main.html", "ann")):
             items_payload = [{"id": o["id"], "text": user_text(o)} for o in items]
             size = ap_page.render(set_name, items_payload, labels, cards,
-                                  os.path.join(args.out, fname))
+                                  os.path.join(args.out, fname), prefix=prefix)
             print(f"  wrote {fname} ({size / 1024:.0f} KB, {len(items)} items, "
                   f"{len(labels)} labels + UNKNOWN)")
 

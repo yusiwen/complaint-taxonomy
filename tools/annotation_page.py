@@ -139,6 +139,7 @@ const ITEMS = {items_json};
 const LABELS = {labels_json};
 const CODEBOOK = {codebook_json};
 const SET = "{set_name}";
+const PREFIX = "{prefix}";
 const UNKNOWN = "UNKNOWN";
 
 const $ = (id) => document.getElementById(id);
@@ -240,7 +241,7 @@ function toJSONL() {{
 
 function done() {{
   $("out").value = toJSONL();
-  $("fname").textContent = "ann_" + (($("who").value || "X").trim() || "X") + ".jsonl";
+  $("fname").textContent = PREFIX + "_" + (($("who").value || "X").trim() || "X") + ".jsonl";
   $("dlg").showModal();
 }}
 
@@ -248,7 +249,7 @@ function download() {{
   const blob = new Blob([toJSONL()], {{ type: "application/x-ndjson" }});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "ann_" + (($("who").value || "X").trim() || "X") + ".jsonl";
+  a.download = PREFIX + "_" + (($("who").value || "X").trim() || "X") + ".jsonl";
   a.click();
   URL.revokeObjectURL(a.href);
 }}
@@ -303,9 +304,10 @@ def read_items(path):
     return out
 
 
-def render(set_name, items, labels, codebook, out_path):
+def render(set_name, items, labels, codebook, out_path, prefix="ann"):
     html = TEMPLATE.format(
         set_name=set_name,
+        prefix=prefix,
         items_json=json.dumps(items, ensure_ascii=False),
         labels_json=json.dumps(labels, ensure_ascii=False),
         codebook_json=json.dumps(codebook, ensure_ascii=False),
