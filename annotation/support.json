@@ -1,0 +1,15 @@
+{
+  "distribution": {
+    "single_item_query": 25,
+    "account_access": 10,
+    "storewide_query": 15,
+    "order_issue": 13,
+    "shipping_issue": 17,
+    "purchase_dispute": 12,
+    "troubleshoot_site": 15,
+    "product_defect": 16,
+    "manage_account": 12,
+    "subscription_inquiry": 15
+  },
+  "too_few_for_per_class_kappa": []
+}
