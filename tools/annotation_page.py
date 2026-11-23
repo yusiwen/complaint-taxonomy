@@ -76,6 +76,17 @@ TEMPLATE = """<!DOCTYPE html>
   .blind {{ font-size: 12px; color: var(--muted); }}
   dialog {{ background: var(--card); color: var(--fg); border: 1px solid var(--line);
             border-radius: 10px; max-width: 720px; }}
+  .sum {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+          margin: 6px 0 2px; }}
+  .sum div {{ background: #10131a; border: 1px solid var(--line); border-radius: 8px;
+              padding: 10px; text-align: center; }}
+  .sum b {{ display: block; font-size: 20px; }}
+  .sum span {{ font-size: 12px; color: var(--muted); }}
+  .warnbox p {{ margin: 8px 0; font-size: 13px; padding: 8px 10px; border-radius: 8px; }}
+  .warnbox .bad {{ background: rgba(255,80,80,.12); border: 1px solid #a33; color: #ffb3b3; }}
+  .warnbox .soft {{ background: rgba(210,153,34,.12); border: 1px solid var(--warn);
+                    color: #f0d090; }}
+  .warnbox .ok {{ background: rgba(63,185,80,.12); border: 1px solid var(--ok); color: #9be3a5; }}
   textarea {{ width: 100%; height: 220px; font-family: ui-monospace, monospace;
               font-size: 12px; }}
 </style>
@@ -125,13 +136,19 @@ TEMPLATE = """<!DOCTYPE html>
 </main>
 
 <dialog id="dlg">
-  <h2 style="margin-top:0">导出</h2>
-  <p class="blind">若浏览器拦截了下载，复制下面的内容存成 <code id="fname"></code>。</p>
-  <textarea id="out" readonly></textarea>
-  <div class="row" style="margin-top:10px">
-    <button class="primary" id="dl">下载</button>
+  <h2 style="margin-top:0">导出检查</h2>
+  <div id="sum" class="sum"></div>
+  <div id="warn" class="warnbox"></div>
+  <div class="row" style="margin-top:12px;flex-wrap:wrap">
+    <button class="primary" id="dl">确认下载</button>
+    <button id="fillun" style="display:none"></button>
+    <button id="jump" style="display:none">跳到第一条未标</button>
     <button id="close">关闭</button>
   </div>
+  <details style="margin-top:12px">
+    <summary class="blind">JSONL 预览（文件名 <code id="fname"></code>）</summary>
+    <textarea id="out" readonly style="height:160px;margin-top:8px"></textarea>
+  </details>
 </dialog>
 
 <script>
@@ -239,13 +256,72 @@ function toJSONL() {{
   return lines.join("\\n") + "\\n";
 }}
 
+function precheck() {{
+  const total = ITEMS.length;
+  const labelled = ITEMS.filter((x) => (state[x.id] || {{}}).primary).length;
+  const unknown = ITEMS.filter((x) => (state[x.id] || {{}}).primary === UNKNOWN).length;
+  const notes = ITEMS.filter((x) => ((state[x.id] || {{}}).note || "").trim()).length;
+  return {{ total, labelled, unknown, notes,
+           unlabelled: total - labelled,
+           ratio: labelled ? unknown / labelled : 0 }};
+}}
+
+let armed = false;   // second click required when UNKNOWN is suspiciously high
+
 function done() {{
+  const c = precheck();
+  armed = false;
   $("out").value = toJSONL();
   $("fname").textContent = PREFIX + "_" + (($("who").value || "X").trim() || "X") + ".jsonl";
+
+  $("sum").innerHTML =
+    "<div><b>" + c.total + "</b><span>总条数</span></div>" +
+    "<div><b>" + c.labelled + "</b><span>已标</span></div>" +
+    "<div><b>" + c.unlabelled + "</b><span>未标</span></div>" +
+    "<div><b>" + (c.ratio * 100).toFixed(0) + "%</b><span>UNKNOWN 占比</span></div>";
+
+  const w = [];
+  if (c.unlabelled > 0) {{
+    w.push('<p class="bad">还有 <b>' + c.unlabelled + '</b> 条未标。未标的条目两边都会写 null，'
+         + 'kappa 会把它当成"一致"从而虚高——所以先标完，或者显式把它们标成 UNKNOWN。</p>');
+  }}
+  if (c.ratio > 0.3) {{
+    w.push('<p class="soft">UNKNOWN 占已标的 <b>' + (c.ratio * 100).toFixed(0) + '%</b>。'
+         + '弃权是合法答案，但两人都大量弃权同样会把 kappa 推高——确认这是你想表达的意思。</p>');
+  }}
+  if (!w.length) {{
+    w.push('<p class="ok">全部已标，UNKNOWN 占比 '
+         + (c.ratio * 100).toFixed(0) + '%，可以导出。</p>');
+  }}
+  $("warn").innerHTML = w.join("");
+
+  $("dl").disabled = c.unlabelled > 0;
+  $("dl").textContent = c.unlabelled > 0 ? "先标完再导出"
+    : (c.ratio > 0.3 ? "确认下载（UNKNOWN 偏高）" : "确认下载");
+  $("fillun").style.display = c.unlabelled > 0 ? "" : "none";
+  $("fillun").textContent = "把剩下 " + c.unlabelled + " 条标为 UNKNOWN";
+  $("jump").style.display = c.unlabelled > 0 ? "" : "none";
+
   $("dlg").showModal();
 }}
 
+function fillUnknown() {{
+  for (const it of ITEMS) {{
+    if (!(state[it.id] || {{}}).primary) {{
+      state[it.id] = Object.assign({{}}, state[it.id] || {{}}, {{ primary: UNKNOWN }});
+    }}
+  }}
+  save(); draw(); done();
+}}
+
 function download() {{
+  const c = precheck();
+  if (c.unlabelled > 0) return;
+  if (c.ratio > 0.3 && !armed) {{
+    armed = true;
+    $("dl").textContent = "再点一次确认（UNKNOWN " + (c.ratio * 100).toFixed(0) + "%）";
+    return;
+  }}
   const blob = new Blob([toJSONL()], {{ type: "application/x-ndjson" }});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -272,6 +348,8 @@ $("firstun").onclick = () => {{
 }};
 $("exp").onclick = done;
 $("dl").onclick = download;
+$("fillun").onclick = fillUnknown;
+$("jump").onclick = () => {{ $("firstun").click(); $("dlg").close(); }};
 $("close").onclick = () => $("dlg").close();
 $("q").addEventListener("input", (e) => {{
   const q = e.target.value.trim().toLowerCase();

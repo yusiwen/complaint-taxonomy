@@ -78,10 +78,29 @@ def main():
     if not shared:
         sys.exit("[fatal] no shared ids between the two files")
 
-    pairs = [(a[i].get(args.field), b[i].get(args.field)) for i in shared]
+    # A row either annotator left blank must not be compared at all: two blanks would
+    # count as agreement and quietly inflate kappa. Dropped rows are reported, because
+    # "we agree 100%" computed on the six items both people filled in is not a result.
+    skipped, answered = [], []
+    for cid in shared:
+        va, vb = a[cid].get(args.field), b[cid].get(args.field)
+        blank = (None, "", "null", "None")
+        if va in blank or vb in blank:
+            skipped.append(cid)
+        else:
+            answered.append((cid, va, vb))
+
+    pairs = [(va, vb) for _, va, vb in answered]
+    if not pairs:
+        sys.exit("[fatal] every shared row is blank on at least one side")
     k = cohen(pairs)
     n_agree = sum(1 for x, y in pairs if x == y)
     print(f"shared items             {len(shared)}")
+    if skipped:
+        print(f"  skipped (blank on one side) {len(skipped)}  "
+              f"-> compared {len(pairs)}")
+        print("  [warn] blanks are excluded rather than counted as agreement; "
+              "an annotator who skipped half the sheet cannot inflate kappa")
     print(f"raw agreement            {n_agree / len(pairs):.3f} ({n_agree}/{len(pairs)})")
     print(f"Cohen's kappa            {k:.3f}   [{verdict(k)}]")
 
@@ -90,8 +109,8 @@ def main():
               f"treat this as a smoke test")
 
     # per-class binary kappa over the label sets, when both sides carry them
-    if all("labels" in a[i] and "labels" in b[i] for i in shared):
-        items = [(set(a[i]["labels"]), set(b[i]["labels"])) for i in shared]
+    if answered and all("labels" in a[i] and "labels" in b[i] for i, _, _ in answered):
+        items = [(set(a[i]["labels"]), set(b[i]["labels"])) for i, _, _ in answered]
         classes = sorted({c for x, _ in items for c in x} | {c for _, y in items for c in y})
         print(f"\n{'class':<28} {'pos A':>6} {'pos B':>6} {'kappa':>7}")
         rows = []
