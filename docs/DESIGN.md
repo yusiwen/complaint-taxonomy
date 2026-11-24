@@ -1,5 +1,9 @@
 # Design: technical route, pipeline internals, decisions, roadmap
 
+> This document covers the *inside* of the clustering step and the decision log behind it.
+> For the chain as a whole — corpus → cluster → name → codebook → annotate → kappa →
+> classify → route, with the gate between each — read [`PIPELINE.md`](PIPELINE.md) first.
+
 This document owns the *reasoning*: what this project is, how the pipeline is
 built, why each choice was made, and what is deliberately not built. Measured
 numbers live in [`README.md`](../README.md#measured-results) and are not repeated
@@ -108,9 +112,27 @@ Two shape details worth knowing before touching the code:
 | `cluster_complaints.py` | the whole pipeline; numpy + stdlib only, one optional dep (`fastembed`) imported lazily |
 | `tools/import_cfpb.py` | CFPB database → labelled sample (and the docstring recording *where narratives actually are*) |
 | `tools/separation_probe.py` | "is this label learnable from the text at all" — run before blaming the pipeline |
-| `tools/eval_against_labels.py` | purity / NMI / per-cluster dominant label against any labelled slice |
+| `tools/eval_against_labels.py` | purity / NMI / ARI / per-cluster dominant label against any labelled slice |
 | `tools/eval_cross_lingual.py` | parallel-pair agreement, per-cluster language mix |
 | `tools/gpu_check.py` | torch/CUDA smoke test with correctness anchors |
+| `tools/k_sweep.py` | choose k by ARI and run-to-run stability, never by purity |
+| `tools/calibrate_thresh.py` | pick `--knn-thresh` per corpus, reporting the orphan rate it costs |
+| `tools/make_proc_seeds.py` | complaint-vs-procedure seed set for the embedding kNN stage |
+| `tools/name_clusters.py` | name + define each cluster into a `taxonomy.json`, with evidence |
+| `llm_naming.py` | the shared naming client (`name_all` / `name_cluster` / `parse_fields`) |
+| `tools/merge_clusters.py` | merge a fine clustering into a coarser one, bottom-up |
+| `tools/merge_taxonomies.py` | combine several taxonomies into one codebook |
+| `tools/make_codebook.py` | taxonomy → the codebook a human annotator can work from |
+| `tools/translate_codebook.py` | add `*_en` display aliases to a codebook |
+| `tools/make_labels.py` | label conversations by *definition*, not by cluster id |
+| `tools/make_annotation_packet.py` | build the double-annotation packet (items, blank sheets, README) |
+| `tools/annotation_page.py` | the page template: dropdown, autosave, zh/en UI, export gate |
+| `tools/annotate_server.py` | serve the packet over HTTP, one token per annotator, answers to disk |
+| `tools/kappa.py` | Cohen's kappa overall and per class, plus the disagreement pairs |
+| `tools/train_classifier.py` | softmax over embeddings, 5-fold OOF, honest baselines |
+| `tools/route_unknown.py` | coverage/accuracy trade-off; what the classifier may answer |
+| `tools/learning_curve.py` | how many labels are actually needed before training stops being starved |
+| `tools/label_audit.py` | is the label set worth annotating at all (cohesion, confusion, recall) |
 
 There is no package, no service, no daemon: `pyproject.toml` sets
 `[tool.uv] package = false` and every entry point is a script.

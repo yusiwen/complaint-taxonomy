@@ -226,6 +226,10 @@ data/public/                                      generated corpora (git-ignored
 
 ## How it works
 
+This section covers the clustering step. **The full chain — corpus → cluster → name →
+codebook → double annotation → kappa → classifier → unknown routing, with the gate
+between each stage — is in [`docs/PIPELINE.md`](docs/PIPELINE.md).**
+
 ```
 conversations
    │  customer-side turns only, PII masked to placeholders
