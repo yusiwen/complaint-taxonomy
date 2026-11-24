@@ -78,14 +78,15 @@ decision for production: "this item is outside the taxonomy, send it to a human"
 **Cohen's kappa** — agreement between two annotators, corrected for what they would
 achieve by guessing:
 
-```
-kappa = (p_observed - p_expected) / (1 - p_expected)
-```
+$$
+\kappa = \frac{p_{\text{observed}} - p_{\text{expected}}}{1 - p_{\text{expected}}}
+$$
 
-`p_expected` is the share of agreement two annotators would reach by each labelling at
-random with their own label frequencies. Raw agreement is therefore useless on its own:
-two annotators who both pick the biggest class 70% of the time agree 0.5 of the time by
-luck alone. kappa of 1 is perfect, 0 is chance, below 0 is worse than chance.
+$p_{\text{expected}}$ is the share of agreement two annotators would reach by each
+labelling at random with their own label frequencies. Raw agreement is therefore useless
+on its own: two annotators who both pick the biggest class 70% of the time agree
+$0.7^2 = 0.49$ of the time by luck alone. $\kappa = 1$ is perfect, $0$ is chance, and
+$\kappa < 0$ is worse than chance.
 
 **It measures the codebook, not the annotators.** A low kappa means the definitions admit
 more than one reading; the fix is a sharper definition, not a more careful person. Removing
@@ -99,28 +100,12 @@ chance, 1 is identical. Rough ladder: below 0.1 is near-random, 0.1–0.3 weak b
 
 ## The stages
 
-```
-S0  corpus            ABCD / CFPB / your own jsonl
-      │               (generated from the source dataset, always gitignored)
-      ▼
-S1  cluster           cluster_complaints.py            → out/<run>/clusters.json
-      │               embeddings → dedupe → k-means    → conv_labels.jsonl
-      ▼
-S2  name              tools/name_clusters.py           → taxonomy.json
-      │               LLM sees samples only, never truth
-      ▼
-S3  merge             tools/merge_taxonomies.py        → codebook (one axis only)
-      │               + tools/make_codebook.py         → codebook.md
-      ▼
-S4  translate         tools/translate_codebook.py      → *_en fields
-      │
-      ▼
-S5  annotate          tools/annotate_server.py         → annotations/ann_{A,B}.jsonl
-      │               two humans, blind to each other   → tools/kappa.py
-      ▼
-S6  production        tools/train_classifier.py        → model.npz
-                      tools/route_unknown.py           → answered / human queue
-```
+![The pipeline as a chain: seven stages, each with the tool that runs it, the artefact it writes, and the gate on the transition below it](assets/pipeline.svg)
+
+Each arrow is a dependency, not a suggestion: a stage reads what the previous one wrote, and
+starts because the gate on that file passed, not because the file exists. The purple chips are
+the gates defined in [Gates and where we are](#gates-and-where-we-are); S3 and S4 carry no
+numbered gate — their checks are in the *Verified by* column below.
 
 | # | Stage | In → Out | Tool | Verified by |
 |---|---|---|---|---|

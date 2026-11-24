@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="838" viewBox="0 0 940 838" role="img" aria-labelledby="t d">
+<title id="t">The complaint-taxonomy pipeline, S0 to S6</title>
+<desc id="d">Seven stages stacked top to bottom. Each card names the stage on the left, the tool that runs it in the middle, and the artefact it writes on the right. Purple chips in the arrows are the gates that must pass before the next stage may start.</desc>
+<style>
+  .bg      { fill: #ffffff; }
+  .card    { fill: #ffffff; stroke: #d0d7de; }
+  .bar     { fill: #0969da; }
+  .id      { fill: #0969da; }
+  .name    { fill: #1f2328; font-weight: 600; }
+  .tool    { fill: #1f2328; }
+  .note    { fill: #57606a; }
+  .out     { fill: #0969da; }
+  .outnote { fill: #57606a; }
+  .arrow   { stroke: #8c959f; fill: none; }
+  .gate    { fill: #faf5ff; stroke: #8250df; }
+  .gid     { fill: #8250df; font-weight: 600; }
+  .gtext   { fill: #8250df; }
+  text     { font-family: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+             font-size: 13px; }
+  .mono    { font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace; }
+  @media (prefers-color-scheme: dark) {
+    .bg      { fill: #0d1117; }
+    .card    { fill: #161b22; stroke: #30363d; }
+    .bar     { fill: #4493f8; }
+    .id      { fill: #4493f8; }
+    .name    { fill: #e6edf3; }
+    .tool    { fill: #e6edf3; }
+    .note    { fill: #9198a1; }
+    .out     { fill: #4493f8; }
+    .outnote { fill: #9198a1; }
+    .arrow   { stroke: #6e7681; }
+    .gate    { fill: #1b1329; stroke: #ab7df8; }
+    .gid     { fill: #ab7df8; }
+    .gtext   { fill: #ab7df8; }
+  }
+</style>
+<rect class="bg" width="940" height="838" rx="8"/>
+<rect class="card" x="30" y="6" width="880" height="78" rx="7"/>
+<rect class="bar" x="30" y="6" width="3" height="78" rx="1.5"/>
+<text class="mono id" x="48" y="42" font-size="12.5" letter-spacing="0.5">S0</text>
+<text class="name" x="102" y="43" font-size="15">corpus</text>
+<text class="mono tool" x="238" y="35" font-size="12.5">tools/get_demo_corpus.py · import_abcd.py</text>
+<text class="mono tool" x="238" y="52" font-size="12.5">import_cfpb.py · import_chinese_cs.py</text>
+<text class="note" x="238" y="69" font-size="11.8">ABCD · CFPB · or your own jsonl</text>
+<text class="note mono" x="652" y="35" font-size="12.0">→</text>
+<text class="mono out" x="670" y="35" font-size="12.0">data/public/*.jsonl</text>
+<text class="outnote" x="670" y="52" font-size="11.2">generated — always gitignored</text>
+<path class="arrow" d="M 88 87 V 114" stroke-width="1.4"/>
+<path class="arrow" d="M 83.5 114 L 88 122 L 92.5 114" stroke-width="1.4" stroke-linejoin="round"/>
+<rect class="card" x="30" y="124" width="880" height="78" rx="7"/>
+<rect class="bar" x="30" y="124" width="3" height="78" rx="1.5"/>
+<text class="mono id" x="48" y="160" font-size="12.5" letter-spacing="0.5">S1</text>
+<text class="name" x="102" y="161" font-size="15">cluster</text>
+<text class="mono tool" x="238" y="153" font-size="12.5">cluster_complaints.py</text>
+<text class="note" x="238" y="170" font-size="11.8">embeddings → dedupe → k-means → conversations</text>
+<text class="note mono" x="652" y="153" font-size="12.0">→</text>
+<text class="mono out" x="670" y="153" font-size="12.0">out/&lt;run&gt;/clusters.json</text>
+<text class="mono out" x="670" y="170" font-size="12.0">out/&lt;run&gt;/conv_labels.jsonl</text>
+<path class="arrow" d="M 88 205 V 232" stroke-width="1.4"/>
+<path class="arrow" d="M 83.5 232 L 88 240 L 92.5 232" stroke-width="1.4" stroke-linejoin="round"/>
+<rect class="gate" x="108" y="211" width="308" height="22" rx="11" stroke-width="1"/>
+<text class="gid" x="123" y="226" font-size="11.5">G1</text>
+<text class="gtext" x="149" y="226" font-size="11.5">ARI ≥ 0.1, stability ≥ 0.8 at chosen k</text>
+<rect class="card" x="30" y="242" width="880" height="78" rx="7"/>
+<rect class="bar" x="30" y="242" width="3" height="78" rx="1.5"/>
+<text class="mono id" x="48" y="278" font-size="12.5" letter-spacing="0.5">S2</text>
+<text class="name" x="102" y="279" font-size="15">name</text>
+<text class="mono tool" x="238" y="271" font-size="12.5">tools/name_clusters.py</text>
+<text class="note" x="238" y="288" font-size="11.8">LLM reads cluster samples only — never the truth</text>
+<text class="note mono" x="652" y="271" font-size="12.0">→</text>
+<text class="mono out" x="670" y="271" font-size="12.0">taxonomy.json</text>
+<text class="outnote" x="670" y="288" font-size="11.2">16 classes, 5 fields each</text>
+<path class="arrow" d="M 88 323 V 350" stroke-width="1.4"/>
+<path class="arrow" d="M 83.5 350 L 88 358 L 92.5 350" stroke-width="1.4" stroke-linejoin="round"/>
+<rect class="gate" x="108" y="329" width="367" height="22" rx="11" stroke-width="1"/>
+<text class="gid" x="123" y="344" font-size="11.5">G2</text>
+<text class="gtext" x="149" y="344" font-size="11.5">a human can say what each of the 16 names means</text>
+<rect class="card" x="30" y="360" width="880" height="78" rx="7"/>
+<rect class="bar" x="30" y="360" width="3" height="78" rx="1.5"/>
+<text class="mono id" x="48" y="396" font-size="12.5" letter-spacing="0.5">S3</text>
+<text class="name" x="102" y="397" font-size="15">merge</text>
+<text class="mono tool" x="238" y="389" font-size="12.5">tools/merge_taxonomies.py</text>
+<text class="mono tool" x="238" y="406" font-size="12.5">tools/make_codebook.py</text>
+<text class="note" x="238" y="423" font-size="11.8">several runs → one codebook, one axis only</text>
+<text class="note mono" x="652" y="389" font-size="12.0">→</text>
+<text class="mono out" x="670" y="389" font-size="12.0">data/codebook_zh_en.json</text>
+<text class="mono out" x="670" y="406" font-size="12.0">data/codebook_zh_en.md</text>
+<text class="outnote" x="670" y="423" font-size="11.2">deliverable — committed</text>
+<path class="arrow" d="M 88 441 V 468" stroke-width="1.4"/>
+<path class="arrow" d="M 83.5 468 L 88 476 L 92.5 468" stroke-width="1.4" stroke-linejoin="round"/>
+<rect class="card" x="30" y="478" width="880" height="78" rx="7"/>
+<rect class="bar" x="30" y="478" width="3" height="78" rx="1.5"/>
+<text class="mono id" x="48" y="514" font-size="12.5" letter-spacing="0.5">S4</text>
+<text class="name" x="102" y="515" font-size="15">translate</text>
+<text class="mono tool" x="238" y="507" font-size="12.5">tools/translate_codebook.py</text>
+<text class="note" x="238" y="524" font-size="11.8">4 of 16 machine labels were wrong; treat as a draft</text>
+<text class="note mono" x="652" y="507" font-size="12.0">→</text>
+<text class="mono out" x="670" y="507" font-size="12.0">*_en fields</text>
+<text class="outnote" x="670" y="524" font-size="11.2">display aliases, never compared</text>
+<path class="arrow" d="M 88 559 V 586" stroke-width="1.4"/>
+<path class="arrow" d="M 83.5 586 L 88 594 L 92.5 586" stroke-width="1.4" stroke-linejoin="round"/>
+<rect class="card" x="30" y="596" width="880" height="78" rx="7"/>
+<rect class="bar" x="30" y="596" width="3" height="78" rx="1.5"/>
+<text class="mono id" x="48" y="632" font-size="12.5" letter-spacing="0.5">S5</text>
+<text class="name" x="102" y="633" font-size="15">annotate</text>
+<text class="mono tool" x="238" y="625" font-size="12.5">tools/annotate_server.py → tools/kappa.py</text>
+<text class="note" x="238" y="642" font-size="11.8">two humans, blind to each other, shared items</text>
+<text class="note mono" x="652" y="625" font-size="12.0">→</text>
+<text class="mono out" x="670" y="625" font-size="12.0">annotations/ann_A.jsonl</text>
+<text class="mono out" x="670" y="642" font-size="12.0">annotations/ann_B.jsonl</text>
+<text class="outnote" x="670" y="659" font-size="11.2">human labour — committed</text>
+<path class="arrow" d="M 88 677 V 704" stroke-width="1.4"/>
+<path class="arrow" d="M 83.5 704 L 88 712 L 92.5 704" stroke-width="1.4" stroke-linejoin="round"/>
+<rect class="gate" x="108" y="683" width="248" height="22" rx="11" stroke-width="1"/>
+<text class="gid" x="123" y="698" font-size="11.5">G3</text>
+<text class="gtext" x="149" y="698" font-size="11.5">κ ≥ 0.7 — the current blocker</text>
+<rect class="card" x="30" y="714" width="880" height="78" rx="7"/>
+<rect class="bar" x="30" y="714" width="3" height="78" rx="1.5"/>
+<text class="mono id" x="48" y="750" font-size="12.5" letter-spacing="0.5">S6</text>
+<text class="name" x="102" y="751" font-size="15">production</text>
+<text class="mono tool" x="238" y="743" font-size="12.5">tools/train_classifier.py</text>
+<text class="mono tool" x="238" y="760" font-size="12.5">tools/route_unknown.py</text>
+<text class="note" x="238" y="777" font-size="11.8">per-item decision with explicit abstention</text>
+<text class="note mono" x="652" y="743" font-size="12.0">→</text>
+<text class="mono out" x="670" y="743" font-size="12.0">model.npz</text>
+<text class="mono out" x="670" y="760" font-size="12.0">answered / human queue</text>
+<text class="outnote" x="670" y="777" font-size="11.2">the only place UNKNOWN is decided</text>
+<path class="arrow" d="M 88 795 V 814" stroke-width="1.4"/>
+<path class="arrow" d="M 83.5 806 L 88 814 L 92.5 806" stroke-width="1.4" stroke-linejoin="round"/>
+<rect class="gate" x="108" y="800" width="344" height="22" rx="11" stroke-width="1"/>
+<text class="gid" x="123" y="815" font-size="11.5">G4 · G5</text>
+<text class="gtext" x="186" y="815" font-size="11.5">beats the baselines; unknown is routed</text>
+</svg>
