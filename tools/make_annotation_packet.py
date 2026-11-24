@@ -129,6 +129,25 @@ def main():
                   f"{len(labels)} labels + UNKNOWN, "
                   f"{'zh/en' if cards and cards[0].get('label_en') else 'zh only'})")
 
+    # Packet metadata, so tools/annotate_server.py can serve this packet without
+    # knowing anything about where the project or its taxonomy lives.
+    if args.html and args.taxonomy:
+        import annotation_page as ap_page
+        with open(args.taxonomy, encoding="utf-8") as f:
+            tax = json.load(f)
+        with open(os.path.join(args.out, "codebook_cards.json"), "w",
+                  encoding="utf-8") as f:
+            json.dump(ap_page.codebook_cards(tax), f, ensure_ascii=False, indent=2)
+        with open(os.path.join(args.out, "packet.json"), "w", encoding="utf-8") as f:
+            json.dump({"pilot": {"items": "pilot_items.jsonl", "n": len(pilot),
+                                 "set_zh": "校准 30 条", "set_en": "calibration (30)",
+                                 "prefix": "pilot"},
+                       "main": {"items": "items.jsonl", "n": len(main_items),
+                                "set_zh": f"正式 {len(main_items)} 条",
+                                "set_en": f"scored set ({len(main_items)})",
+                                "prefix": "ann"}},
+                      f, ensure_ascii=False, indent=2)
+
     support = {}
     if args.labels:
         truth = {o["id"]: o.get(args.label_field) for o in read_jsonl(args.labels)}
@@ -159,7 +178,8 @@ def main():
 | `codebook.md` | 要检验的类别定义，**只按这个标**，不要凭印象 |
 | `pilot_items.jsonl` | 30 条，校准用 |
 | `pilot_A.jsonl` / `pilot_B.jsonl` | 上面 30 条的空答卷 |
-| `items.jsonl` | {len(main_items)} 条，**决定 kappa 的那一批** |
+| `items.jsonl` / `pilot_items.jsonl` | {len(main_items)} 条 / {len(pilot)} 条——前者**决定 kappa** |
+| `packet.json` / `codebook_cards.json` | 服务器读这两份，不依赖项目内路径 |
 | `ann_A.jsonl` / `ann_B.jsonl` | 上面 {len(main_items)} 条的空答卷 |
 | `annotate_pilot.html` | **推荐**：校准集标注页（下拉选择、自动保存、中英切换） |
 | `annotate_main.html` | 正式集的网页标注页 |
@@ -227,6 +247,26 @@ uv run python tools/kappa.py --a annotation/ann_A.jsonl --b annotation/ann_B.jso
 
 输出：总体 kappa、原始一致率、每类 kappa、以及最大的分歧格（A 判什么 → B 判什么），
 分歧格子就是下一次改 codebook 的清单。
+
+## 推荐：用服务器开标（不用传文件）
+
+```bash
+uv run python tools/annotate_server.py --packet annotation --out annotations \
+    --annotator A --annotator B --port 8787
+```
+
+启动后会打印两条链接，各给一个人。每选一次就直接追加进
+`annotations/ann_<谁>.jsonl` 并 fsync，**不需要导出、不需要互相传文件**；右上角的
+`已保存 n/150` 就是服务器上的真实进度。
+
+- **两个人互相看不到**：链接里的 token 决定身份，页面里只装这个人的答案；没有
+  任何路由能列出别人的答案。
+- **断网不丢**：POST 失败的答案会在浏览器里暂存，恢复后自动重试。
+- **/admin 只看进度不看标签**：连管理员也看不到别人的答案内容，否则分歧会先被
+  "讨论"掉，kappa 就没意义了。
+
+静态 HTML（`annotate_pilot.html` / `annotate_main.html`）仍然保留，用于没有网络、
+或只想自己先试一遍 codebook 的场景。
 
 ## 生成物 vs 人工成果（落盘约定）
 

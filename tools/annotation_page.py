@@ -108,6 +108,7 @@ TEMPLATE = """<!DOCTYPE html>
   <span class="chip" id="pos"></span>
   <div class="bar"><i id="bar"></i></div>
   <span class="chip" id="count"></span>
+  <span class="chip" id="sync"></span>
   <span class="grow"></span>
   <input id="who" style="width:150px">
   <div class="lang">
@@ -173,6 +174,16 @@ const PREFIX = "@@PREFIX@@";
 const HAS_EN = CODEBOOK.some((c) => !!c.label_en);
 const UNKNOWN = "UNKNOWN";
 
+// "static" = answers live in localStorage and export is a Blob download.
+// "server" = answers are POSTed to tools/annotate_server.py, which writes them to
+// disk; export downloads what the server actually holds, so the file on disk and
+// the file the annotator takes away cannot diverge.
+const MODE = "@@MODE@@";
+const WHO = @@WHO@@;   // render() passes a JSON string, so no quotes here
+const ANSWERS = @@ANSWERS@@;
+const POST_URL = "@@POST_URL@@";
+const EXPORT_URL = "@@EXPORT_URL@@";
+
 const I18N = {
   zh: {
     title: "投诉标注 · " + SET_ZH,
@@ -188,8 +199,12 @@ const I18N = {
     prev: "← 上一条",
     next: "下一条 →",
     firstun: "跳到下一条未标",
+    whoFixed: "身份由访问链接决定，不能改",
     blind: "只用这份 codebook 判断，参考真值或互相商量都会让 kappa 失去意义。"
-         + "进度自动保存在本机浏览器。快捷键：↑↓ 切换条目，Alt+←/→ 同，Enter 下一条。",
+         + (MODE === "server"
+            ? "每选一次就直接写进服务器上的文件，不需要手动保存。"
+            : "进度自动保存在本机浏览器。")
+         + "快捷键：↑↓ 切换条目，Alt+←/→ 同，Enter 下一条。",
     cbTitle: "CODEBOOK（" + CODEBOOK.length + " 类）",
     filter: "过滤类别…",
     pick: "— 请选择 —",
@@ -211,6 +226,9 @@ const I18N = {
     warnUnknown: "UNKNOWN 占已标的 X%。弃权是合法答案，但两人都大量弃权同样会把 kappa "
                + "推高——确认这是你想表达的意思。",
     allDone: "全部已标，UNKNOWN 占比 X%，可以导出。",
+    synced: "已保存",
+    syncReady: "已连服务器",
+    saveFailed: "保存失败，已本地缓存",
     includes: "包含",
     boundary: "边界",
     counterexample: "反例",
@@ -229,9 +247,13 @@ const I18N = {
     prev: "← Previous",
     next: "Next →",
     firstun: "Jump to next unlabelled",
+    whoFixed: "your identity comes from the link you opened",
     blind: "Judge from this codebook only. Checking the ground truth, or discussing with "
-         + "the other annotator, makes the kappa meaningless. Progress is saved in this "
-         + "browser. Keys: Up/Down or Alt+Left/Right to move, Enter for the next item.",
+         + "the other annotator, makes the kappa meaningless. "
+         + (MODE === "server"
+            ? "Every pick is written straight to the file on the server."
+            : "Progress is saved in this browser.")
+         + " Keys: Up/Down or Alt+Left/Right to move, Enter for the next item.",
     cbTitle: "CODEBOOK (" + CODEBOOK.length + " classes)",
     filter: "Filter classes…",
     pick: "— choose —",
@@ -255,6 +277,9 @@ const I18N = {
                + "annotators abstaining a lot also pushes kappa up — confirm this is what "
                + "you mean.",
     allDone: "Everything is labelled, UNKNOWN at X%. Ready to export.",
+    synced: "saved",
+    syncReady: "server connected",
+    saveFailed: "save failed, cached locally",
     includes: "Includes",
     boundary: "Boundary",
     counterexample: "Not this",
@@ -269,16 +294,76 @@ const t = (k) => (I18N[lang][k] !== undefined ? I18N[lang][k] : k);
 const withNum = (k, n) => t(k).replace("N", n);
 const withPct = (k, p) => t(k).replace("X", p);
 
-function key() {
-  return "complaint-taxonomy:" + SET_ZH + ":" + (($("who").value || "anon").trim() || "anon");
-}
+function who() { return (($("who").value || "anon").trim() || "anon"); }
+function key() { return "complaint-taxonomy:" + SET_ZH + ":" + who(); }
+function pendKey() { return "ct-pending:" + SET_ZH + ":" + who(); }
+
 function load() {
   try {
     const raw = localStorage.getItem(key());
-    if (raw) Object.assign(state, JSON.parse(raw));
+    // server mode: the server's copy is authoritative, local storage is only a
+    // buffer for answers whose POST failed
+    if (raw && MODE !== "server") Object.assign(state, JSON.parse(raw));
   } catch (e) { console.warn("state load failed", e); }
+  if (MODE === "server") Object.assign(state, ANSWERS || {});
 }
-function save() { localStorage.setItem(key(), JSON.stringify(state)); }
+
+function pendingAll() {
+  try { return JSON.parse(localStorage.getItem(pendKey()) || "{}"); }
+  catch (e) { return {}; }
+}
+function setPending(m) { localStorage.setItem(pendKey(), JSON.stringify(m)); }
+function syncLabel(txt, cls) {
+  const el = $("sync");
+  if (!el) return;
+  el.textContent = txt;
+  el.className = "chip " + (cls || "");
+}
+
+// Save the given ids. In static mode this is a localStorage write; in server mode
+// it POSTs, and an entry whose POST fails is remembered and retried, because an
+// answer that silently never reached the disk is the one failure this page cannot
+// tolerate.
+async function save(ids) {
+  if (MODE !== "server") {
+    localStorage.setItem(key(), JSON.stringify(state));
+    return;
+  }
+  const answers = ids.map((id) => ({
+    id: id,
+    primary: (state[id] || {}).primary || null,
+    note: (state[id] || {}).note || "",
+  }));
+  try {
+    const r = await fetch(POST_URL, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers: answers }),
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    const p = pendingAll();
+    for (const a of answers) delete p[a.id];
+    setPending(p);
+    syncLabel(t("synced") + " " + j.labelled + "/" + j.total, "ok");
+  } catch (e) {
+    const p = pendingAll();
+    for (const a of answers) p[a.id] = a;
+    setPending(p);
+    syncLabel(t("saveFailed"), "warn");
+  }
+}
+
+function flushPending() {
+  const p = pendingAll();
+  const ids = Object.keys(p);
+  if (!ids.length) return;
+  for (const id of ids)
+    if (p[id].primary) state[id] = Object.assign({}, state[id] || {}, p[id]);
+  // redraw after the POST settles: the retried answer is newer than what the page
+  // rendered at boot, and a dropdown that disagrees with the stored answer is how an
+  // annotator ends up "correcting" the wrong item
+  save(ids).then(() => { draw(); if ($("dlg").open) done(); });
+}
 
 function esc(s) {
   const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
@@ -386,7 +471,7 @@ function draw() {
 function setPrimary(v) {
   const id = ITEMS[i].id;
   state[id] = Object.assign({}, state[id] || {}, { primary: v });
-  save(); draw();
+  save([id]); draw();
 }
 
 function toJSONL() {
@@ -445,11 +530,14 @@ function done() {
 }
 
 function fillUnknown() {
+  const touched = [];
   for (const it of ITEMS) {
-    if (!(state[it.id] || {}).primary)
+    if (!(state[it.id] || {}).primary) {
       state[it.id] = Object.assign({}, state[it.id] || {}, { primary: UNKNOWN });
+      touched.push(it.id);
+    }
   }
-  save(); draw(); done();
+  save(touched); draw(); done();
 }
 
 function download() {
@@ -460,6 +548,7 @@ function download() {
     $("dl").textContent = t("dlArmed") + (c.ratio * 100).toFixed(0) + "%)";
     return;
   }
+  if (MODE === "server") { window.location.href = EXPORT_URL; return; }
   const blob = new Blob([toJSONL()], { type: "application/x-ndjson" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -472,7 +561,7 @@ $("sel").addEventListener("change", (e) => setPrimary(e.target.value));
 $("note").addEventListener("change", (e) => {
   const id = ITEMS[i].id;
   state[id] = Object.assign({}, state[id] || {}, { note: e.target.value });
-  save();
+  save([id]);
 });
 $("who").addEventListener("change", () => { load(); draw(); });
 $("next").onclick = () => { if (i < ITEMS.length - 1) { i++; draw(); $("sel").focus(); } };
@@ -506,6 +595,13 @@ document.addEventListener("keydown", (e) => {
 });
 
 load(); applyLang();
+if (MODE === "server") {
+  $("who").value = WHO;
+  $("who").readOnly = true;
+  $("who").title = MODE === "server" ? t("whoFixed") : "";
+  syncLabel(t("syncReady"), "");
+  flushPending();
+}
 </script>
 </body>
 </html>
@@ -522,13 +618,20 @@ def read_items(path):
     return out
 
 
-def render(set_name_zh, items, codebook, out_path, prefix="ann", set_name_en=""):
-    """Write one page.
+def render(set_name_zh, items, codebook, out_path, prefix="ann", set_name_en="",
+           mode="static", who="", answers=None, post_url="", export_url="",
+           return_html=False):
+    """Render one page and write it to `out_path`.
 
     `items` are {"id", "text"}; `codebook` cards carry the Chinese fields and, when
     `tools/translate_codebook.py` has run, the `*_en` twins.
+
+    mode="static" writes the standalone file (localStorage + Blob download).
+    mode="server" is what tools/annotate_server.py serves: answers arrive in
+    `answers` (already on disk), POSTs go to `post_url`, and export downloads
+    `export_url`. With return_html=True the string is returned instead of a size,
+    so the server can serve it without touching the filesystem.
     """
-    html = TEMPLATE
     subs = {
         "@@TITLE@@": "投诉标注 · " + set_name_zh,
         "@@ITEMS@@": json.dumps(items, ensure_ascii=False),
@@ -536,9 +639,17 @@ def render(set_name_zh, items, codebook, out_path, prefix="ann", set_name_en="")
         "@@SET_ZH@@": json.dumps(set_name_zh, ensure_ascii=False),
         "@@SET_EN@@": json.dumps(set_name_en or set_name_zh, ensure_ascii=False),
         "@@PREFIX@@": prefix,
+        "@@MODE@@": mode,
+        "@@WHO@@": json.dumps(who, ensure_ascii=False),
+        "@@ANSWERS@@": json.dumps(answers or {}, ensure_ascii=False),
+        "@@POST_URL@@": post_url,
+        "@@EXPORT_URL@@": export_url,
     }
+    html = TEMPLATE
     for k, v in subs.items():
         html = html.replace(k, v)
+    if return_html:
+        return html
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(html)
     return os.path.getsize(out_path)

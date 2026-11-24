@@ -804,6 +804,24 @@ anyone can read the taxonomy on GitHub without running the pipeline. It carries 
 `review_status` field that says exactly what has and has not been checked — the
 precedence rules are still blank.
 
+**Serving it instead of mailing files — `tools/annotate_server.py`.** The standalone
+HTML page works offline, but it makes the file the unit of work: fill 150 items, export,
+send it back. The server removes that round trip and keeps the property the evaluation
+depends on — each annotator opens a link carrying their own token and sees only their own
+answers, and there is no route that lists anyone else's.
+
+```bash
+uv run python tools/annotate_server.py --packet annotation --out annotations \
+    --annotator A --annotator B --port 8787      # prints one URL per person
+```
+
+Every pick is appended to `annotations/ann_<who>.jsonl` and fsynced before the response
+leaves, so the file on disk is always the truth; an answer whose POST failed is held in
+the browser and retried, and `/admin` shows progress counts but never label text (an
+admin who can read both answers can also reconcile them, which is the one thing the
+kappa cannot survive). `tools/kappa.py` reads the on-disk files directly — no export
+step in between.
+
 **R4a — `tools/make_codebook.py` and `tools/kappa.py`.** The codebook generator emits
 the five fields the naming pass produced plus an explicit **precedence slot** per class,
 and a worksheet of the 6 class pairs whose definitions sit closest in embedding space
