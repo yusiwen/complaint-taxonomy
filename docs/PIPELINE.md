@@ -153,6 +153,7 @@ command, or that carries corpus text, does not get committed.**
 | `data/seeds*.jsonl` | source | yes | hand-written seed sets; not derivable |
 | `data/abcd_flow_coarse.json` | source | yes | the flow → 4-group mapping used by the lever experiments |
 | `data/codebook_zh_en.json` / `.md` | **deliverable** | yes | the taxonomy is the project's output; readers should not need to run an LLM to see it |
+| `docs/assets/results.svg` | generated **deliverable** | yes | one command rebuilds it from `out/`, but the picture of the measurements is worth reading without an environment |
 | `data/public/` | generated corpus | no | one command rebuilds it, and it is megabytes of customer text |
 | `out/` | run artefacts | no | centroids, clusters, models — reproducible from a seed |
 | `annotation/` | generated packet | no | items, blank sheets, HTML; rebuilt from the codebook |

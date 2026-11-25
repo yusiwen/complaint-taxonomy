@@ -296,6 +296,13 @@ Four details that are easy to get wrong and are handled here:
 All numbers below were produced on this machine with `--embed-backend fastembed`
 (`paraphrase-multilingual-MiniLM-L12-v2`, 384d).
 
+![Measured results of the zh_final run: cluster sizes, annotation abstention, the classifier against its baselines, per-class precision/recall/F1, and the out-of-fold confusion matrix](docs/assets/results.svg)
+
+The picture is generated, not maintained by hand: `uv run python tools/make_figures.py`
+reads `out/` (clusters, codebook, annotation summaries, classifier report) and rewrites
+`docs/assets/results.svg`. Re-run it after a run and the picture follows; every number on
+it comes from an artefact, so it cannot disagree with the tables below.
+
 ### Datasets, and what each one is good for
 
 No public corpus is simultaneously bilingual, dialogue-shaped and complaint-
@@ -1155,6 +1162,9 @@ uv.lock                       resolved dependency set, committed
 .python-version               3.12
 README.md                     what runs, how to run it, what it measured
 docs/DESIGN.md                technical route, pipeline internals, decisions, roadmap
+docs/PIPELINE.md              the chain end to end, with a gate per stage
+docs/assets/pipeline.svg      the stage chain, drawn
+docs/assets/results.svg       measured results of one run (generated, see Measured results)
 cluster_complaints.py         the pipeline (numpy + stdlib only)
 data/
   seeds_zh.jsonl seeds_en.jsonl            complaint vs non-complaint seeds for --seeds
@@ -1186,6 +1196,7 @@ tools/
   separation_probe.py         is the label learnable from the text at all?
   learning_curve.py           how many labels are needed before accuracy saturates
   label_audit.py              which classes are ambiguous, mergeable or non-textual
+  make_figures.py             out/ -> docs/assets/results.svg (drawn by hand, no plotting lib)
   gpu_check.py                torch/CUDA smoke test with real correctness anchors
 out/                          run outputs (git-ignored)
 .venv/                        uv-managed environment (git-ignored)
